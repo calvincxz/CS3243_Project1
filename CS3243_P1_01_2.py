@@ -117,7 +117,6 @@ class Puzzle(object):
 
     # heuristic 1 - calculates number of misplaced tiles from init state to goal state
     def misplacedTiles(self):
-        return 1
         count = 0
         for i in range(0, self.size):
             for j in range(0, self.size):
