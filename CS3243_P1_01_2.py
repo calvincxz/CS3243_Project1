@@ -5,6 +5,8 @@ from queue import PriorityQueue
 
 # Using misplaced tiles as heuristic
 result = list()
+
+
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
         # you may add more attributes if you think is useful
@@ -120,11 +122,8 @@ class Puzzle(object):
         count = 0
         for i in range(0, self.size):
             for j in range(0, self.size):
-                if self.init_state[i][j] != self.size * i + j + 1:
-                    if i == j == self.size - 1 and self.init_state[i][j] == 0:
-                        continue
-                    else:
-                        count += 1
+                if self.init_state[i][j] != self.goal_state[i][j]:
+                    count += 1
         return count
     # you may add more functions if you think is useful
 
