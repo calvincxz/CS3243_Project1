@@ -1,10 +1,11 @@
 import os
 import sys
 import copy
-from filecmp import cmp
-from queue import PriorityQueue
+from Queue import PriorityQueue
 
 result = list()
+visited_nodes = set()
+
 # Using ManhattanDist as heuristic
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
@@ -14,9 +15,10 @@ class Puzzle(object):
         self.goal_state = goal_state
         self.actions = list()
         self.empty_cell_position = [-1, -1]
+        self.evaluation_cost = self.evaluation_function()
 
     def __lt__(self, other):
-        return self.evaluation_function() < other.evaluation_function()
+        return self.evaluation_cost
 
     # def __cmp__(self, other):
     #     return cmp(self.evaluation_function(), other.evaluation_function())
@@ -92,29 +94,36 @@ class Puzzle(object):
 
     def solve(self):
         global result
-        # global pq
+        global visited_nodes
         pq = PriorityQueue()
         pq.put(self)
         while not (pq.empty()):
             node = pq.get()
+            #print(node.init_state)
+            if node.init_state == []:
+                continue
+            # checks if node has been visited before
+            tuple_for_set = tuple(map(tuple, node.init_state))
+
+            if tuple_for_set in visited_nodes:
+                continue
+            #print(tuple_for_set)
+            visited_nodes.add(tuple_for_set)
+            
+	        # goal found
             if node.init_state == node.goal_state:
-                # result = self.actions
                 print(node.actions)
                 return node.actions
-            if node.moveEmptyCellDown().init_state:
-                pq.put(node.moveEmptyCellDown())
-            if node.moveEmptyCellUp().init_state:
-                pq.put(node.moveEmptyCellUp())
-            if node.moveEmptyCellToLeft().init_state:
-                pq.put(node.moveEmptyCellToLeft())
-            if node.moveEmptyCellToRight().init_state:
-                pq.put(node.moveEmptyCellToRight())
+            # adds neighbour
+            pq.put(node.moveEmptyCellDown())
+            pq.put(node.moveEmptyCellUp())
+            pq.put(node.moveEmptyCellToLeft())
+            pq.put(node.moveEmptyCellToRight())
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
 
     def evaluation_function(self):
-        print(self.calcManhattanDist())
         return self.calcManhattanDist() + len(self.actions)
 
     # heuristic 1 - calculates number of misplaced tiles from init state to goal state
