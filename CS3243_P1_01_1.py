@@ -120,11 +120,8 @@ class Puzzle(object):
         count = 0
         for i in range(0, self.size):
             for j in range(0, self.size):
-                if self.init_state[i][j] != self.size * i + j + 1:
-                    if i == j == self.size - 1 and self.init_state[i][j] == 0:
-                        continue
-                    else:
-                        count += 1
+                if self.init_state[i][j] != self.goal_state[i][j]:
+                    count += 1
         return count
 
     # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
@@ -132,16 +129,19 @@ class Puzzle(object):
         count = 0
         for i in range(0, self.size):
             for j in range(0, self.size):
-                if self.init_state[i][j] != self.size * i + j + 1:
+                if self.init_state[i][j] != self.goal_state[i][j]:
                     goal = self.getGoalPosition(self.init_state[i][j])
                     count += abs(goal[0] - i + goal[1] - j)
         return count
 
     def getGoalPosition(self, value):
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if value == self.size * i + j + 1:
-                    return i, j
+        col = value % self.size
+        if col == 0:
+            row = (value / self.size) - 1
+            return row, self.size - 1
+        else:
+            row = (value - col) / self.size
+            return row, col - 1
 
     # you may add more functions if you think is useful
 
