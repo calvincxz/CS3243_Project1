@@ -1,14 +1,12 @@
 import os
 import sys
 import copy
-from Queue import PriorityQueue
+from queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
 
 # Using ManhattanDist as heuristic
-
-
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
         # you may add more attributes if you think is useful
@@ -20,10 +18,7 @@ class Puzzle(object):
         self.evaluation_cost = self.evaluation_function()
 
     def __lt__(self, other):
-        return self.evaluation_cost
-
-    # def __cmp__(self, other):
-    #     return cmp(self.evaluation_function(), other.evaluation_function())
+        return self.evaluation_cost < other.evaluation_cost
 
     def getEmptyCellPosition(self):
         if self.empty_cell_position != [-1, -1]:
@@ -36,62 +31,77 @@ class Puzzle(object):
 
     def moveEmptyCellToLeft(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if col <= 0:
-            return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row][col - 1]
-            new_state[row][col - 1] = 0
+            return None
+
+        new_state[row][col] = new_state[row][col - 1]
+        new_state[row][col - 1] = 0
+        new_actions = self.actions.copy()
+        new_actions.append("RIGHT")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row, col - 1]
-        new_puzzle.actions.append("RIGHT")
+        new_puzzle.actions = new_actions
+        new_puzzle.evaluation_cost += len(new_actions)   
+        
         return new_puzzle
 
     def moveEmptyCellUp(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if row <= 0:
-            return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row - 1][col]
-            new_state[row - 1][col] = 0
-        new_puzzle.actions.append("DOWN")
+            return None
+
+        new_state[row][col] = new_state[row - 1][col]
+        new_state[row - 1][col] = 0
+        new_actions = self.actions.copy()
+        new_actions.append("DOWN")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row - 1, col]
+        new_puzzle.actions = new_actions
+        new_puzzle.evaluation_cost += len(new_actions)    
+        
         return new_puzzle
 
     def moveEmptyCellToRight(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if col >= self.size - 1:
-            return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row][col + 1]
-            new_state[row][col + 1] = 0
-        new_puzzle.actions.append("LEFT")
+            return None
+        
+        new_state[row][col] = new_state[row][col + 1]
+        new_state[row][col + 1] = 0
+        new_actions = self.actions.copy()
+        new_actions.append("LEFT")
+        new_puzzle = Puzzle(new_state, self.goal_state)       
         new_puzzle.empty_cell_position = [row, col + 1]
+        new_puzzle.actions = new_actions
+        new_puzzle.evaluation_cost += len(new_actions)   
+        
         return new_puzzle
 
     def moveEmptyCellDown(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if row >= self.size - 1:
-            return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row + 1][col]
-            new_state[row + 1][col] = 0
+            return None
+
+        new_state[row][col] = new_state[row + 1][col]
+        new_state[row + 1][col] = 0
+        new_actions = self.actions.copy()
+        new_actions.append("UP")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
-        new_puzzle.actions.append("UP")
+        new_puzzle.actions = new_actions
+        new_puzzle.evaluation_cost += len(new_actions)    
         return new_puzzle
 
     def solve(self):
@@ -101,7 +111,6 @@ class Puzzle(object):
         pq.put(self)
         while not (pq.empty()):
             node = pq.get()
-            #print(node.init_state)
             if node.init_state == []:
                 continue
             # checks if node has been visited before
@@ -109,18 +118,18 @@ class Puzzle(object):
 
             if tuple_for_set in visited_nodes:
                 continue
-            #print(tuple_for_set)
             visited_nodes.add(tuple_for_set)
-            
-	        # goal found
+            # goal found
             if node.init_state == node.goal_state:
                 print(node.actions)
+                print(len(node.actions))
                 return node.actions
             # adds neighbour
-            pq.put(node.moveEmptyCellDown())
-            pq.put(node.moveEmptyCellUp())
-            pq.put(node.moveEmptyCellToLeft())
-            pq.put(node.moveEmptyCellToRight())
+            neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
+                        node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
+            for neighbour in neighbours:
+                if neighbour != None:
+                    pq.put(neighbour)
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
@@ -178,28 +187,32 @@ if __name__ == "__main__":
         raise IOError("Input file not found!")
 
     lines = f.readlines()
-
+    
     # n = num rows in input file
     n = len(lines)
-    # max_num = 2 to the power of n - 1
+    # max_num = n to the power of 2 - 1
     max_num = n ** 2 - 1
 
     # Instantiate a 2D list of size n x n
     init_state = [[0 for i in range(n)] for j in range(n)]
     goal_state = [[0 for i in range(n)] for j in range(n)]
+    
 
-    i, j = 0, 0
+    i,j = 0, 0
     for line in lines:
-        for number in line:
-            if '0' <= number <= str(max_num):
-                init_state[i][j] = int(number)
+        for number in line.split(" "):
+            if number == '':
+                continue
+            value = int(number , base = 10)
+            if  0 <= value <= max_num:
+                init_state[i][j] = value
                 j += 1
-                if j == n:  # ??
+                if j == n:
                     i += 1
                     j = 0
 
     for i in range(1, max_num + 1):
-        goal_state[(i - 1) // n][(i - 1) % n] = i
+        goal_state[(i-1)//n][(i-1)%n] = i
     goal_state[n - 1][n - 1] = 0
 
     puzzle = Puzzle(init_state, goal_state)
@@ -207,4 +220,4 @@ if __name__ == "__main__":
 
     with open(sys.argv[2], 'a') as f:
         for answer in ans:
-            f.write(answer + '\n')
+            f.write(answer+'\n')

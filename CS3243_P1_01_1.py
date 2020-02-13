@@ -110,6 +110,7 @@ class Puzzle(object):
             visited_nodes = set()
             if self.DLS(0, limit):
                 print(result)
+                print(len(result))
                 return result
 
         print("UNSOLVABLE")
@@ -161,28 +162,32 @@ if __name__ == "__main__":
         raise IOError("Input file not found!")
 
     lines = f.readlines()
-
+    
     # n = num rows in input file
     n = len(lines)
-    # max_num = 2 to the power of n - 1
+    # max_num = n to the power of 2 - 1
     max_num = n ** 2 - 1
 
     # Instantiate a 2D list of size n x n
     init_state = [[0 for i in range(n)] for j in range(n)]
     goal_state = [[0 for i in range(n)] for j in range(n)]
+    
 
-    i, j = 0, 0
+    i,j = 0, 0
     for line in lines:
-        for number in line:
-            if '0' <= number <= str(max_num):
-                init_state[i][j] = int(number)
+        for number in line.split(" "):
+            if number == '':
+                continue
+            value = int(number , base = 10)
+            if  0 <= value <= max_num:
+                init_state[i][j] = value
                 j += 1
-                if j == n:  # ??
+                if j == n:
                     i += 1
                     j = 0
 
     for i in range(1, max_num + 1):
-        goal_state[(i-1)//n][(i-1) % n] = i
+        goal_state[(i-1)//n][(i-1)%n] = i
     goal_state[n - 1][n - 1] = 0
 
     puzzle = Puzzle(init_state, goal_state)
