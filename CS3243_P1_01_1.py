@@ -112,15 +112,44 @@ class Puzzle(object):
             self.moveEmptyCellUp().DLS(
                 depth + 1, limit) or self.moveEmptyCellDown().DLS(depth + 1, limit)
 
+    # helper function to determine whether an initial state is solvable, using the concept of inversions
+    # formula is derived from https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
+    def solvable(self):
+        # flatten 2d grid into 1d list
+        flatList = []
+        for i in range(0, self.size):
+            for j in range(0, self.size):
+                flatList.append(self.init_state[i][j])
+        inversions = 0
+        rowWithBlank = 0
+        # run through the list and see how many inversions there are
+        # this should be a one time n^2 operation
+        for i in range(0, len(flatList)):
+            current = flatList[i]
+            if (current == 0):
+                # take note of which row we are on
+                rowWithBlank = i
+            else:
+                for j in range(i + 1, len(flatList)):
+                    if (flatList[j] != 0 and current > flatList[j]):
+                        inversions += 1
+        
+        evenDimensions = self.size % 2 == 0
+        evenInversions = inversions % 2 == 0
+        blankOnEvenRow = rowWithBlank % 2 == 0
+        
+        return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
+
     # insert unsolvable check here
     def solve(self):
-        global visited_nodes
-        for limit in range(0, 1000):
-            visited_nodes = set()
-            if self.DLS(0, limit):
-                print(result)
-                print(len(result))
-                return result
+        if self.solvable():
+            global visited_nodes
+            for limit in range(0, 1000):
+                visited_nodes = set()
+                if self.DLS(0, limit):
+                    print(result)
+                    print(len(result))
+                    return result
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]

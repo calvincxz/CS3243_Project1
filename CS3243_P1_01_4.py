@@ -103,34 +103,63 @@ class Puzzle(object):
         new_puzzle.evaluation_cost += len(new_actions)    
         return new_puzzle
 
+    # helper function to determine whether an initial state is solvable, using the concept of inversions
+    # formula is derived from https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
+    def solvable(self):
+        # flatten 2d grid into 1d list
+        flatList = []
+        for i in range(0, self.size):
+            for j in range(0, self.size):
+                flatList.append(self.init_state[i][j])
+        inversions = 0
+        rowWithBlank = 0
+        # run through the list and see how many inversions there are
+        # this should be a one time n^2 operation
+        for i in range(0, len(flatList)):
+            current = flatList[i]
+            if (current == 0):
+                # take note of which row we are on
+                rowWithBlank = i
+            else:
+                for j in range(i + 1, len(flatList)):
+                    if (flatList[j] != 0 and current > flatList[j]):
+                        inversions += 1
+        
+        evenDimensions = self.size % 2 == 0
+        evenInversions = inversions % 2 == 0
+        blankOnEvenRow = rowWithBlank % 2 == 0
+        
+        return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
+
     def solve(self):
-        global result
-        global visited_nodes
-        pq = PriorityQueue()
-        pq.put(self)
+        if self.solvable():
+            global result
+            global visited_nodes
+            pq = PriorityQueue()
+            pq.put(self)
 
-        # loops till goal state is found or all nodes are visited
-        while not (pq.empty()):
-            node = pq.get()
-            tuple_for_set = tuple(map(tuple, node.init_state))
+            # loops till goal state is found or all nodes are visited
+            while not (pq.empty()):
+                node = pq.get()
+                tuple_for_set = tuple(map(tuple, node.init_state))
 
-            # check if popped node's state = goal state
-            if node.init_state == node.goal_state:
-                print(node.actions)
-                print(len(node.actions))
-                return node.actions
+                # check if popped node's state = goal state
+                if node.init_state == node.goal_state:
+                    print(node.actions)
+                    print(len(node.actions))
+                    return node.actions
 
-            # checks if node has been visited before
-            if tuple_for_set in visited_nodes:
-                continue
-            visited_nodes.add(tuple_for_set)
+                # checks if node has been visited before
+                if tuple_for_set in visited_nodes:
+                    continue
+                visited_nodes.add(tuple_for_set)
 
-            # adds neighbour to frontier
-            neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
-                        node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
-            for neighbour in neighbours:
-                if neighbour != None:
-                    pq.put(neighbour)
+                # adds neighbour to frontier
+                neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
+                            node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
+                for neighbour in neighbours:
+                    if neighbour != None:
+                        pq.put(neighbour)
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
