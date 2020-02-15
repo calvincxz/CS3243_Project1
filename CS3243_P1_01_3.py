@@ -1,7 +1,6 @@
 import os
 import sys
-import copy
-from queue import PriorityQueue
+from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
@@ -39,7 +38,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row][col - 1]
         new_state[row][col - 1] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("RIGHT")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row, col - 1]
@@ -58,7 +57,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row - 1][col]
         new_state[row - 1][col] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("DOWN")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row - 1, col]
@@ -77,7 +76,7 @@ class Puzzle(object):
         
         new_state[row][col] = new_state[row][col + 1]
         new_state[row][col + 1] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("LEFT")
         new_puzzle = Puzzle(new_state, self.goal_state)       
         new_puzzle.empty_cell_position = [row, col + 1]
@@ -96,7 +95,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row + 1][col]
         new_state[row + 1][col] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("UP")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
@@ -109,22 +108,24 @@ class Puzzle(object):
         global visited_nodes
         pq = PriorityQueue()
         pq.put(self)
+
+        # loops till goal state is found or all nodes are visited
         while not (pq.empty()):
             node = pq.get()
-            if node.init_state == []:
-                continue
-            # checks if node has been visited before
             tuple_for_set = tuple(map(tuple, node.init_state))
 
-            if tuple_for_set in visited_nodes:
-                continue
-            visited_nodes.add(tuple_for_set)
-            # goal found
+            # check if popped node's state = goal state
             if node.init_state == node.goal_state:
                 print(node.actions)
                 print(len(node.actions))
                 return node.actions
-            # adds neighbour
+
+            # checks if node has been visited before
+            if tuple_for_set in visited_nodes:
+                continue
+            visited_nodes.add(tuple_for_set)
+
+            # adds neighbour to frontier
             neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
                         node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
             for neighbour in neighbours:
@@ -168,6 +169,30 @@ class Puzzle(object):
         else:
             row = (value - col) / self.size
             return row, col - 1
+    # heuristic 3 - calculates sum of manhattan tiles and linear conflict between tiles in a row  
+    
+    def calcLinearConflict(self):
+        count = 0
+        for i in range(0, self.size):
+            min = (i * self.size)
+            max = (i + 1) * self.size
+            curr_row = []
+            # check manhattan distance
+            for j in range(0, self.size):
+                if self.init_state[i][j] != self.goal_state[i][j]:
+                    goal = self.getGoalPosition(self.init_state[i][j])
+                    count += abs(goal[0] - i + goal[1] - j)
+                # push all values belonging to current row in another array
+                value = self.init_state[i][j]
+                if (value > min & value <= max):
+                    curr_row.append(value)
+            # check current row values for linear conflict. count + 2 for each linear conflict
+            for k in range(0, len(curr_row)-2):
+                for m in range(k + 1, len(curr_row)-1):
+                    if curr_row[k] > curr_row[m]:
+                        count += 2
+        # print count
+        return count
 
     # you may add more functions if you think is useful
 

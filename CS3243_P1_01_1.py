@@ -1,10 +1,8 @@
 import os
 import sys
-import copy
 
 visited_nodes = set()
 result = list()
-
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
@@ -26,62 +24,72 @@ class Puzzle(object):
 
     def moveEmptyCellToLeft(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if col <= 0:
             return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row][col - 1]
-            new_state[row][col - 1] = 0
+        
+        new_state[row][col] = new_state[row][col - 1]
+        new_state[row][col - 1] = 0
+        new_actions = self.actions[:]
+        new_actions.append("RIGHT")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row, col - 1]
-        new_puzzle.actions.append("RIGHT")
+        new_puzzle.actions = new_actions
         return new_puzzle
 
     def moveEmptyCellUp(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if row <= 0:
             return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row - 1][col]
-            new_state[row - 1][col] = 0
-        new_puzzle.actions.append("DOWN")
+
+        new_state[row][col] = new_state[row - 1][col]
+        new_state[row - 1][col] = 0
+        new_actions = self.actions[:]
+        new_actions.append("DOWN")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row - 1, col]
+        new_puzzle.actions = new_actions
+        
         return new_puzzle
 
-    def moveEmptyCellToRight(self):
+    def moveEmptyCellToRight(self):          
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if col >= self.size - 1:
             return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row][col + 1]
-            new_state[row][col + 1] = 0
-        new_puzzle.actions.append("LEFT")
+        
+        new_state[row][col] = new_state[row][col + 1]
+        new_state[row][col + 1] = 0
+        new_actions = self.actions[:]
+        new_actions.append("LEFT")
+        new_puzzle = Puzzle(new_state, self.goal_state)       
         new_puzzle.empty_cell_position = [row, col + 1]
+        new_puzzle.actions = new_actions
+        
         return new_puzzle
 
     def moveEmptyCellDown(self):
         empty_cell_position = self.getEmptyCellPosition()
-        new_puzzle = copy.deepcopy(self)
-        new_state = new_puzzle.init_state
+        new_state = list(map(list, self.init_state))
         row = empty_cell_position[0]
         col = empty_cell_position[1]
         if row >= self.size - 1:
             return Puzzle([], [])
-        else:
-            new_state[row][col] = new_state[row + 1][col]
-            new_state[row + 1][col] = 0
+
+        new_state[row][col] = new_state[row + 1][col]
+        new_state[row + 1][col] = 0
+        new_actions = self.actions[:]
+        new_actions.append("UP")
+        new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
-        new_puzzle.actions.append("UP")
+        new_puzzle.actions = new_actions
         return new_puzzle
 
     def DLS(self, depth, limit):
@@ -104,9 +112,10 @@ class Puzzle(object):
             self.moveEmptyCellUp().DLS(
                 depth + 1, limit) or self.moveEmptyCellDown().DLS(depth + 1, limit)
 
+    # insert unsolvable check here
     def solve(self):
         global visited_nodes
-        for limit in range(0, 50):
+        for limit in range(0, 1000):
             visited_nodes = set()
             if self.DLS(0, limit):
                 print(result)
@@ -115,35 +124,6 @@ class Puzzle(object):
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
-
-    # heuristic 1 - calculates number of misplaced tiles from init state to goal state
-    def misplacedTiles(self):
-        count = 0
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.goal_state[i][j]:
-                    count += 1
-        return count
-
-    # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
-    def calcManhattanDist(self):
-        count = 0
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.goal_state[i][j]:
-                    goal = self.getGoalPosition(self.init_state[i][j])
-                    count += abs(goal[0] - i + goal[1] - j)
-        return count
-
-    def getGoalPosition(self, value):
-        col = value % self.size
-        if col == 0:
-            row = (value / self.size) - 1
-            return row, self.size - 1
-        else:
-            row = (value - col) / self.size
-            return row, col - 1
-
     # you may add more functions if you think is useful
 
 

@@ -1,12 +1,11 @@
 import os
 import sys
-import copy
-from queue import PriorityQueue
+from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
 
-# Using ManhattanDist as heuristic
+# heuristic 1 - calculates number of misplaced tiles from init state to goal state
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
         # you may add more attributes if you think is useful
@@ -39,7 +38,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row][col - 1]
         new_state[row][col - 1] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("RIGHT")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row, col - 1]
@@ -58,7 +57,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row - 1][col]
         new_state[row - 1][col] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("DOWN")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row - 1, col]
@@ -77,7 +76,7 @@ class Puzzle(object):
         
         new_state[row][col] = new_state[row][col + 1]
         new_state[row][col + 1] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("LEFT")
         new_puzzle = Puzzle(new_state, self.goal_state)       
         new_puzzle.empty_cell_position = [row, col + 1]
@@ -96,7 +95,7 @@ class Puzzle(object):
 
         new_state[row][col] = new_state[row + 1][col]
         new_state[row + 1][col] = 0
-        new_actions = self.actions.copy()
+        new_actions = self.actions[:]
         new_actions.append("UP")
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
@@ -109,22 +108,24 @@ class Puzzle(object):
         global visited_nodes
         pq = PriorityQueue()
         pq.put(self)
+
+        # loops till goal state is found or all nodes are visited
         while not (pq.empty()):
             node = pq.get()
-            if node.init_state == []:
-                continue
-            # checks if node has been visited before
             tuple_for_set = tuple(map(tuple, node.init_state))
 
-            if tuple_for_set in visited_nodes:
-                continue
-            visited_nodes.add(tuple_for_set)
-            # goal found
+            # check if popped node's state = goal state
             if node.init_state == node.goal_state:
                 print(node.actions)
                 print(len(node.actions))
                 return node.actions
-            # adds neighbour
+
+            # checks if node has been visited before
+            if tuple_for_set in visited_nodes:
+                continue
+            visited_nodes.add(tuple_for_set)
+
+            # adds neighbour to frontier
             neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
                         node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
             for neighbour in neighbours:
@@ -168,7 +169,6 @@ class Puzzle(object):
         else:
             row = (value - col) / self.size
             return row, col - 1
-
     # you may add more functions if you think is useful
 
 
@@ -187,28 +187,32 @@ if __name__ == "__main__":
         raise IOError("Input file not found!")
 
     lines = f.readlines()
-
+    
     # n = num rows in input file
     n = len(lines)
-    # max_num = 2 to the power of n - 1
+    # max_num = n to the power of 2 - 1
     max_num = n ** 2 - 1
 
     # Instantiate a 2D list of size n x n
     init_state = [[0 for i in range(n)] for j in range(n)]
     goal_state = [[0 for i in range(n)] for j in range(n)]
+    
 
-    i, j = 0, 0
+    i,j = 0, 0
     for line in lines:
-        for number in line:
-            if '0' <= number <= str(max_num):
-                init_state[i][j] = int(number)
+        for number in line.split(" "):
+            if number == '':
+                continue
+            value = int(number , base = 10)
+            if  0 <= value <= max_num:
+                init_state[i][j] = value
                 j += 1
-                if j == n:  # ??
+                if j == n:
                     i += 1
                     j = 0
 
     for i in range(1, max_num + 1):
-        goal_state[(i - 1) // n][(i - 1) % n] = i
+        goal_state[(i-1)//n][(i-1)%n] = i
     goal_state[n - 1][n - 1] = 0
 
     puzzle = Puzzle(init_state, goal_state)
@@ -216,4 +220,4 @@ if __name__ == "__main__":
 
     with open(sys.argv[2], 'a') as f:
         for answer in ans:
-            f.write(answer + '\n')
+            f.write(answer+'\n')
