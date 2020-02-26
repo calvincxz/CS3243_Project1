@@ -14,7 +14,7 @@ class Puzzle(object):
         self.goal_state = goal_state
         self.actions = list()
         self.empty_cell_position = [-1, -1]
-        self.evaluation_cost = self.evaluation_function()
+        self.evaluation_cost = -1
 
     def __lt__(self, other):
         return self.evaluation_cost < other.evaluation_cost
@@ -28,6 +28,46 @@ class Puzzle(object):
                 if cell_value == 0:
                     return [i, j]
 
+    def getManhattanDistanceChange(self, blankRow, blankCol, direction):
+        # find the tile that is to be moved into the blank space. note its current position, final position and goal position
+        # and then calculate the difference in manhattan distance after the move
+        if direction == 'left':
+            movedTileOrigCol = blankCol - 1
+            movedTileVal = self.init_state[blankRow][movedTileOrigCol]
+            movedTileGoalCol = (movedTileVal - 1) % self.size
+            if movedTileOrigCol < movedTileGoalCol:
+                return -1
+            else: 
+                return 1
+
+        elif direction == 'right':
+            movedTileOrigCol = blankCol + 1
+            movedTileVal = self.init_state[blankRow][movedTileOrigCol]
+            movedTileGoalCol = (movedTileVal - 1) % self.size
+            if movedTileOrigCol > movedTileGoalCol:
+                return -1
+            else: 
+                return 1
+
+        elif direction == 'up':
+            movedTileOrigRow = blankRow - 1
+            movedTileVal = self.init_state[movedTileOrigRow][blankCol]
+            movedTileGoalRow = (movedTileVal - 1) / self.size
+            if movedTileOrigRow < movedTileGoalRow:
+                return -1
+            else: 
+                return 1
+        
+        # moving blank tile down
+        else:
+            movedTileOrigRow = blankRow + 1
+            movedTileVal = self.init_state[movedTileOrigRow][blankCol]
+            movedTileGoalRow = (movedTileVal - 1) / self.size
+            if movedTileOrigRow > movedTileGoalRow:
+                return -1
+            else: 
+                return 1
+
     def moveEmptyCellToLeft(self):
         empty_cell_position = self.getEmptyCellPosition()
         new_state = list(map(list, self.init_state))
@@ -36,6 +76,8 @@ class Puzzle(object):
         if col <= 0:
             return None
 
+        manhattanDistanceChange = self.getManhattanDistanceChange(row, col, 'left')
+
         new_state[row][col] = new_state[row][col - 1]
         new_state[row][col - 1] = 0
         new_actions = self.actions[:]
@@ -43,8 +85,9 @@ class Puzzle(object):
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row, col - 1]
         new_puzzle.actions = new_actions
-        new_puzzle.evaluation_cost += len(new_actions)   
-        
+        # update the manhattandistance by 1 or -1, and the g(n) by 1 since we're going deeper by 1 level
+        new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + 1   
+
         return new_puzzle
 
     def moveEmptyCellUp(self):
@@ -55,6 +98,8 @@ class Puzzle(object):
         if row <= 0:
             return None
 
+        manhattanDistanceChange = self.getManhattanDistanceChange(row, col, 'up')
+
         new_state[row][col] = new_state[row - 1][col]
         new_state[row - 1][col] = 0
         new_actions = self.actions[:]
@@ -62,8 +107,9 @@ class Puzzle(object):
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row - 1, col]
         new_puzzle.actions = new_actions
-        new_puzzle.evaluation_cost += len(new_actions)    
-        
+        # update the manhattandistance by 1 or -1, and the g(n) by 1 since we're going deeper by 1 level
+        new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + 1
+
         return new_puzzle
 
     def moveEmptyCellToRight(self):
@@ -73,6 +119,8 @@ class Puzzle(object):
         col = empty_cell_position[1]
         if col >= self.size - 1:
             return None
+
+        manhattanDistanceChange = self.getManhattanDistanceChange(row, col, 'right')
         
         new_state[row][col] = new_state[row][col + 1]
         new_state[row][col + 1] = 0
@@ -81,8 +129,8 @@ class Puzzle(object):
         new_puzzle = Puzzle(new_state, self.goal_state)       
         new_puzzle.empty_cell_position = [row, col + 1]
         new_puzzle.actions = new_actions
-        new_puzzle.evaluation_cost += len(new_actions)   
-        
+        # update the manhattandistance by 1 or -1, and the g(n) by 1 since we're going deeper by 1 level
+        new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + 1        
         return new_puzzle
 
     def moveEmptyCellDown(self):
@@ -93,6 +141,8 @@ class Puzzle(object):
         if row >= self.size - 1:
             return None
 
+        manhattanDistanceChange = self.getManhattanDistanceChange(row, col, 'down')
+
         new_state[row][col] = new_state[row + 1][col]
         new_state[row + 1][col] = 0
         new_actions = self.actions[:]
@@ -100,7 +150,7 @@ class Puzzle(object):
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
         new_puzzle.actions = new_actions
-        new_puzzle.evaluation_cost += len(new_actions)    
+        new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + 1        
         return new_puzzle
 
     # helper function to determine whether an initial state is solvable, using the concept of inversions
@@ -119,7 +169,7 @@ class Puzzle(object):
             current = flatList[i]
             if (current == 0):
                 # take note of which row we are on
-                rowWithBlank = i
+                rowWithBlank = i / self.size
             else:
                 for j in range(i + 1, len(flatList)):
                     if (flatList[j] != 0 and current > flatList[j]):
@@ -128,11 +178,15 @@ class Puzzle(object):
         evenDimensions = self.size % 2 == 0
         evenInversions = inversions % 2 == 0
         blankOnEvenRow = rowWithBlank % 2 == 0
-        
+        print("number of inversions", inversions)
+        print("evenInversion?", evenInversions)
+        print("blankOnEvenRow?", blankOnEvenRow)
         return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
 
     def solve(self):
         if self.solvable():
+            # run manhattan calculation only once. Eval cost at the start is only = manhattan distance as we have not traversed any nodes yet so g(n) = 0
+            self.evaluation_cost = self.calcManhattanDist()
             global result
             global visited_nodes
             pq = PriorityQueue()
@@ -141,6 +195,7 @@ class Puzzle(object):
             # loops till goal state is found or all nodes are visited
             while not (pq.empty()):
                 node = pq.get()
+                # print "manhattan distance of this node", node.evaluation_cost
                 tuple_for_set = tuple(map(tuple, node.init_state))
 
                 # check if popped node's state = goal state
@@ -150,8 +205,6 @@ class Puzzle(object):
                     return node.actions
 
                 # checks if node has been visited before
-                if tuple_for_set in visited_nodes:
-                    continue
                 visited_nodes.add(tuple_for_set)
 
                 # adds neighbour to frontier
@@ -159,13 +212,15 @@ class Puzzle(object):
                             node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
                 for neighbour in neighbours:
                     if neighbour != None:
-                        pq.put(neighbour)
+                        tuple_for_set = tuple(map(tuple, neighbour.init_state))
+                        if not (tuple_for_set in visited_nodes):
+                            pq.put(neighbour)
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
 
-    def evaluation_function(self):
-        return self.calcManhattanDist() + len(self.actions)
+    # def evaluation_function(self):
+    #     return self.manhattanValue + len(self.actions)
 
     # heuristic 1 - calculates number of misplaced tiles from init state to goal state
     def misplacedTiles(self):
@@ -184,20 +239,15 @@ class Puzzle(object):
     def calcManhattanDist(self):
         count = 0
         for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.goal_state[i][j]:
+            for j in range(0, self.size): 
+                if self.init_state[i][j] != 0 and self.init_state[i][j] != self.goal_state[i][j]:
                     goal = self.getGoalPosition(self.init_state[i][j])
-                    count += abs(goal[0] - i + goal[1] - j)
+                    count += abs(goal[0] - i) + abs(goal[1] - j)
+        # print("manhattan distance is", count)
         return count
 
     def getGoalPosition(self, value):
-        col = value % self.size
-        if col == 0:
-            row = (value / self.size) - 1
-            return row, self.size - 1
-        else:
-            row = (value - col) / self.size
-            return row, col - 1
+        return (value - 1) / self.size, (value - 1) % self.size
     # heuristic 3 - calculates sum of manhattan tiles and linear conflict between tiles in a row  
     
     def calcLinearConflict(self):

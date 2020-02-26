@@ -128,7 +128,7 @@ class Puzzle(object):
             current = flatList[i]
             if (current == 0):
                 # take note of which row we are on
-                rowWithBlank = i
+                rowWithBlank = i / self.size
             else:
                 for j in range(i + 1, len(flatList)):
                     if (flatList[j] != 0 and current > flatList[j]):

@@ -119,7 +119,7 @@ class Puzzle(object):
             current = flatList[i]
             if (current == 0):
                 # take note of which row we are on
-                rowWithBlank = i
+                rowWithBlank = i / self.size
             else:
                 for j in range(i + 1, len(flatList)):
                     if (flatList[j] != 0 and current > flatList[j]):
@@ -191,13 +191,7 @@ class Puzzle(object):
         return count
 
     def getGoalPosition(self, value):
-        col = value % self.size
-        if col == 0:
-            row = (value / self.size) - 1
-            return row, self.size - 1
-        else:
-            row = (value - col) / self.size
-            return row, col - 1
+        return (value - 1) / self.size, (value - 1) % self.size
     # you may add more functions if you think is useful
 
 
