@@ -109,8 +109,7 @@ class Puzzle(object):
         visited_nodes.add(tuple_for_set)
 
         return self.moveEmptyCellToRight().DLS(depth + 1, limit) or self.moveEmptyCellToLeft().DLS(depth + 1, limit) or \
-            self.moveEmptyCellUp().DLS(
-                depth + 1, limit) or self.moveEmptyCellDown().DLS(depth + 1, limit)
+            self.moveEmptyCellUp().DLS(depth + 1, limit) or self.moveEmptyCellDown().DLS(depth + 1, limit)
 
     # helper function to determine whether an initial state is solvable, using the concept of inversions
     # formula is derived from https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
@@ -140,7 +139,6 @@ class Puzzle(object):
         
         return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
 
-    # insert unsolvable check here
     def solve(self):
         if self.solvable():
             global visited_nodes

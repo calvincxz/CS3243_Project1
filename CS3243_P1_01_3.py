@@ -4,6 +4,7 @@ from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
+generated = 0
 
 # Using ManhattanDist as heuristic
 class Puzzle(object):
@@ -189,6 +190,7 @@ class Puzzle(object):
             self.evaluation_cost = self.calcManhattanDist()
             global result
             global visited_nodes
+            global generated
             pq = PriorityQueue()
             pq.put(self)
 
@@ -200,6 +202,7 @@ class Puzzle(object):
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
+                    print("generated: ", generated)
                     print(node.actions)
                     print(len(node.actions))
                     return node.actions
@@ -214,6 +217,7 @@ class Puzzle(object):
                     if neighbour != None:
                         tuple_for_set = tuple(map(tuple, neighbour.init_state))
                         if not (tuple_for_set in visited_nodes):
+                            generated += 1
                             pq.put(neighbour)
 
         print("UNSOLVABLE")
