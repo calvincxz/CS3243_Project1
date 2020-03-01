@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from Queue import PriorityQueue
 
 result = list()
@@ -133,6 +134,7 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
+            start = time.time()
             global result
             global visited_nodes
             pq = PriorityQueue()
@@ -141,14 +143,15 @@ class Puzzle(object):
             # loops till goal state is found or all nodes are visited
             while not (pq.empty()):
                 node = pq.get()
-                # print "manhattan distance of this node", node.evaluation_cost
                 tuple_for_set = tuple(map(tuple, node.init_state))
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
-                    print("generated: ", generated)
+                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
+                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -161,7 +164,6 @@ class Puzzle(object):
                     if neighbour != None:
                         tuple_for_set = tuple(map(tuple, neighbour.init_state))
                         if not (tuple_for_set in visited_nodes):
-                            generated += 1
                             pq.put(neighbour)
 
         print("UNSOLVABLE")
@@ -181,22 +183,6 @@ class Puzzle(object):
                     else:
                         count += 1
         return count
-
-    # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
-
-    def calcManhattanDist(self):
-        count = 0
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.goal_state[i][j]:
-                    goal = self.getGoalPosition(self.init_state[i][j])
-                    count += abs(goal[0] - i + goal[1] - j)
-        return count
-
-    def getGoalPosition(self, value):
-        return (value - 1) / self.size, (value - 1) % self.size
-    # you may add more functions if you think is useful
-
 
 if __name__ == "__main__":
     # do NOT modify below

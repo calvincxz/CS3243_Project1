@@ -1,10 +1,10 @@
 import os
 import sys
+import time
 from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
-generated = 0
 
 # Using ManhattanDist as heuristic
 class Puzzle(object):
@@ -179,32 +179,30 @@ class Puzzle(object):
         evenDimensions = self.size % 2 == 0
         evenInversions = inversions % 2 == 0
         blankOnEvenRow = rowWithBlank % 2 == 0
-        print("number of inversions", inversions)
-        print("evenInversion?", evenInversions)
-        print("blankOnEvenRow?", blankOnEvenRow)
         return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
 
     def solve(self):
         if self.solvable():
+            start = time.time()
             # run manhattan calculation only once. Eval cost at the start is only = manhattan distance as we have not traversed any nodes yet so g(n) = 0
             self.evaluation_cost = self.calcManhattanDist()
             global result
             global visited_nodes
-            global generated
             pq = PriorityQueue()
             pq.put(self)
 
             # loops till goal state is found or all nodes are visited
             while not (pq.empty()):
                 node = pq.get()
-                # print "manhattan distance of this node", node.evaluation_cost
                 tuple_for_set = tuple(map(tuple, node.init_state))
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
-                    print("generated: ", generated)
+                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
+                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -217,26 +215,10 @@ class Puzzle(object):
                     if neighbour != None:
                         tuple_for_set = tuple(map(tuple, neighbour.init_state))
                         if not (tuple_for_set in visited_nodes):
-                            generated += 1
                             pq.put(neighbour)
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
-
-    # def evaluation_function(self):
-    #     return self.manhattanValue + len(self.actions)
-
-    # heuristic 1 - calculates number of misplaced tiles from init state to goal state
-    def misplacedTiles(self):
-        count = 0
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.size * i + j + 1:
-                    if i == j == self.size - 1 and self.init_state[i][j] == 0:
-                        continue
-                    else:
-                        count += 1
-        return count
 
     # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
 
@@ -247,38 +229,12 @@ class Puzzle(object):
                 if self.init_state[i][j] != 0 and self.init_state[i][j] != self.goal_state[i][j]:
                     goal = self.getGoalPosition(self.init_state[i][j])
                     count += abs(goal[0] - i) + abs(goal[1] - j)
-        # print("manhattan distance is", count)
         return count
 
     def getGoalPosition(self, value):
         return (value - 1) / self.size, (value - 1) % self.size
-    # heuristic 3 - calculates sum of manhattan tiles and linear conflict between tiles in a row  
     
-    def calcLinearConflict(self):
-        count = 0
-        for i in range(0, self.size):
-            min = (i * self.size)
-            max = (i + 1) * self.size
-            curr_row = []
-            # check manhattan distance
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.goal_state[i][j]:
-                    goal = self.getGoalPosition(self.init_state[i][j])
-                    count += abs(goal[0] - i + goal[1] - j)
-                # push all values belonging to current row in another array
-                value = self.init_state[i][j]
-                if (value > min & value <= max):
-                    curr_row.append(value)
-            # check current row values for linear conflict. count + 2 for each linear conflict
-            for k in range(0, len(curr_row)-2):
-                for m in range(k + 1, len(curr_row)-1):
-                    if curr_row[k] > curr_row[m]:
-                        count += 2
-        # print count
-        return count
-
     # you may add more functions if you think is useful
-
 
 if __name__ == "__main__":
     # do NOT modify below

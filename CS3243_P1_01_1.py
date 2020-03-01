@@ -1,5 +1,6 @@
 import os
 import sys
+import time;
 
 visited_nodes = set()
 result = list()
@@ -141,12 +142,16 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
+            start = time.time()
             global visited_nodes
             for limit in range(0, 1000):
                 visited_nodes = set()
                 if self.DLS(0, limit):
+                    end = time.time()
                     print(result)
                     print(len(result))
+                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'duration: ' + str(end - start)
                     return result
 
         print("UNSOLVABLE")

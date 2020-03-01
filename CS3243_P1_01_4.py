@@ -1,10 +1,10 @@
 import os
 import sys
+import time
 from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
-generated = 0
 
 # Using ManhattanDist as heuristic
 class Puzzle(object):
@@ -91,10 +91,8 @@ class Puzzle(object):
         oldColWithTileLinearPenalty = self.getLinearConflictForColumn(col - 1)
         newColWithBlankLinearPenalty = new_puzzle.getLinearConflictForColumn(col - 1)
         newColWithTileLinearPenalty = new_puzzle.getLinearConflictForColumn(col)
-        # print("move left params", oldColWithBlankLinearPenalty, oldColWithTileLinearPenalty, newColWithBlankLinearPenalty, newColWithTileLinearPenalty)
 
         linearConflictChange = newColWithBlankLinearPenalty + newColWithTileLinearPenalty - oldColWithBlankLinearPenalty - oldColWithTileLinearPenalty
-        # print("move left linear change", linearConflictChange)
         # update the manhattan distance by 1 or -1, the linear conflict by -2, 0 or +2 and the g(n) by 1 since we're going deeper by 1 level
         new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + linearConflictChange + 1   
 
@@ -122,10 +120,8 @@ class Puzzle(object):
         oldRowWithTileLinearPenalty = self.getLinearConflictForRow(row - 1)
         newRowWithBlankLinearPenalty = new_puzzle.getLinearConflictForRow(row - 1)
         newRowWithTileLinearPenalty = new_puzzle.getLinearConflictForRow(row)
-        # print("move up params", oldRowWithBlankLinearPenalty, oldRowWithTileLinearPenalty, newRowWithBlankLinearPenalty, newRowWithTileLinearPenalty)
 
         linearConflictChange = newRowWithBlankLinearPenalty + newRowWithTileLinearPenalty - oldRowWithBlankLinearPenalty - oldRowWithTileLinearPenalty
-        # print("move up linear change", linearConflictChange)
         # update the manhattan distance by 1 or -1, the linear conflict by -2, 0 or +2 and the g(n) by 1 since we're going deeper by 1 level
         new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + linearConflictChange + 1   
 
@@ -153,13 +149,9 @@ class Puzzle(object):
         oldColWithTileLinearPenalty = self.getLinearConflictForColumn(col + 1)
         newColWithBlankLinearPenalty = new_puzzle.getLinearConflictForColumn(col + 1)
         newColWithTileLinearPenalty = new_puzzle.getLinearConflictForColumn(col)
-        # print self.init_state
-        # print new_puzzle.init_state
-        # print("move right params", oldColWithBlankLinearPenalty, oldColWithTileLinearPenalty, newColWithBlankLinearPenalty, newColWithTileLinearPenalty)
-
+        
         linearConflictChange = newColWithBlankLinearPenalty + newColWithTileLinearPenalty - oldColWithBlankLinearPenalty - oldColWithTileLinearPenalty
         # update the manhattan distance by 1 or -1, the linear conflict by -2, 0 or +2 and the g(n) by 1 since we're going deeper by 1 level
-        # print("move right linear change", linearConflictChange)
         new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + linearConflictChange + 1
 
         return new_puzzle
@@ -186,11 +178,9 @@ class Puzzle(object):
         oldRowWithTileLinearPenalty = self.getLinearConflictForRow(row + 1)
         newRowWithBlankLinearPenalty = new_puzzle.getLinearConflictForRow(row + 1)
         newRowWithTileLinearPenalty = new_puzzle.getLinearConflictForRow(row)
-        # print("move down params", oldRowWithBlankLinearPenalty, oldRowWithTileLinearPenalty, newRowWithBlankLinearPenalty, newRowWithTileLinearPenalty)
 
         linearConflictChange = newRowWithBlankLinearPenalty + newRowWithTileLinearPenalty - oldRowWithBlankLinearPenalty - oldRowWithTileLinearPenalty
         # update the manhattan distance by 1 or -1, the linear conflict by -2, 0 or +2 and the g(n) by 1 since we're going deeper by 1 level
-        # print("move down linear change", linearConflictChange)
         new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + linearConflictChange + 1
 
         return new_puzzle   
@@ -220,34 +210,30 @@ class Puzzle(object):
         evenDimensions = self.size % 2 == 0
         evenInversions = inversions % 2 == 0
         blankOnEvenRow = rowWithBlank % 2 == 0
-        print("number of inversions", inversions)
-        print("evenInversion?", evenInversions)
-        print("blankOnEvenRow?", blankOnEvenRow)
         return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
 
     def solve(self):
         if self.solvable():
-            # run manhattan calculation and linear conflict on the full grid only once.
-            # Eval cost at the start is only = manhattan distance + linear conflict as we have not traversed any nodes yet, ie g(n) = 0
+            start = time.time()
+            # run manhattan calculation and linear conflict on the full grid only once. Eval cost at the start is only = manhattan distance + linear conflict as we have not traversed any nodes yet, ie g(n) = 0
             self.evaluation_cost = self.calcManhattanDist() + self.calcLinearConflict()
             global result
             global visited_nodes
-            global generated
             pq = PriorityQueue()
             pq.put(self)
 
             # loops till goal state is found or all nodes are visited
             while not (pq.empty()):
                 node = pq.get()
-                # print("evaluation cost: ", node.evaluation_cost)
-                # print "manhattan distance of this node", node.evaluation_cost
                 tuple_for_set = tuple(map(tuple, node.init_state))
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
-                    print("generated: ", generated)
+                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
+                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -260,23 +246,10 @@ class Puzzle(object):
                     if neighbour != None:
                         tuple_for_set = tuple(map(tuple, neighbour.init_state))
                         if not (tuple_for_set in visited_nodes):
-                            generated += 1
                             pq.put(neighbour)
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
-
-    # heuristic 1 - calculates number of misplaced tiles from init state to goal state
-    def misplacedTiles(self):
-        count = 0
-        for i in range(0, self.size):
-            for j in range(0, self.size):
-                if self.init_state[i][j] != self.size * i + j + 1:
-                    if i == j == self.size - 1 and self.init_state[i][j] == 0:
-                        continue
-                    else:
-                        count += 1
-        return count
 
     # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
 
@@ -287,7 +260,6 @@ class Puzzle(object):
                 if self.init_state[i][j] != 0 and self.init_state[i][j] != self.goal_state[i][j]:
                     goal = self.getGoalPosition(self.init_state[i][j])
                     count += abs(goal[0] - i) + abs(goal[1] - j)
-        # print("manhattan distance is", count)
         return count
 
     def getGoalPosition(self, value):
@@ -299,8 +271,6 @@ class Puzzle(object):
         for i in range(0, self.size):
             count += self.getLinearConflictForRow(i)
             count += self.getLinearConflictForColumn(i)
-        # print count
-        print("linear value", count)
         return count
 
     # you may add more functions if you think is useful
@@ -315,7 +285,6 @@ class Puzzle(object):
             if (current - 1) / self.size == row:
                 for j in range (i + 1, self.size):
                     if (self.init_state[row][j] - 1) / self.size == row and self.init_state[row][j] != 0 and current > self.init_state[row][j]:
-                        # print ('conflict between', current, self.init_state[row][j])
                         return 2
         return 0
 
@@ -329,7 +298,6 @@ class Puzzle(object):
             if (current - 1) % self.size == col:
                 for j in range (i + 1, self.size):
                     if (self.init_state[j][col] - 1) % self.size == col and self.init_state[j][col] != 0 and current > self.init_state[j][col]:
-                        # print ('conflict between', current, self.init_state[j][col])
                         return 2
         return 0
 
