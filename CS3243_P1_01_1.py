@@ -1,13 +1,11 @@
 import os
 import sys
-import time;
 
 visited_nodes = set()
 result = list()
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        # you may add more attributes if you think is useful
         self.size = len(init_state)
         self.init_state = init_state
         self.goal_state = goal_state
@@ -142,22 +140,16 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
-            start = time.time()
             global visited_nodes
             for limit in range(0, 1000):
                 visited_nodes = set()
                 if self.DLS(0, limit):
-                    end = time.time()
                     print(result)
                     print(len(result))
-                    print 'number of visited nodes: ' + str(len(visited_nodes))
-                    print 'duration: ' + str(end - start)
                     return result
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
-    # you may add more functions if you think is useful
-
 
 if __name__ == "__main__":
     # do NOT modify below

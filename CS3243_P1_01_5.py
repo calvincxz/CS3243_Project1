@@ -1,11 +1,19 @@
 import os
 import sys
+import time
 from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
 
-# heuristic 1 - calculates number of misplaced tiles from current state to goal state
+# SELECT WHAT MODE YOU WANT TO RUN
+# This file has unoptimized versions of manhattan and linear (recalculating the heuristic on each move instead of making stepwise adjustments)
+# We do this for adaptability's sake.
+
+# mode = 'MISPLACED'
+# mode = 'MANHATTAN'
+mode = 'LINEAR'
+
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
         self.size = len(init_state)
@@ -132,6 +140,7 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
+            start = time.time()
             global result
             global visited_nodes
             pq = PriorityQueue()
@@ -144,8 +153,11 @@ class Puzzle(object):
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
+                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
+                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -164,7 +176,13 @@ class Puzzle(object):
         return ["UNSOLVABLE"]
 
     def evaluation_function(self):
-        return self.misplacedTiles()
+        global mode
+        if mode == 'MISPLACED':
+            return self.misplacedTiles()
+        elif mode == 'MANHATTAN':
+            return self.calcManhattanDist()
+        else:
+            return self.calcLinearConflict()
 
     # heuristic 1 - calculates number of misplaced tiles from init state to goal state
     def misplacedTiles(self):
@@ -177,6 +195,55 @@ class Puzzle(object):
                     else:
                         count += 1
         return count
+
+    # heuristic 2 - calculates manhattan tiles from init state to goal state
+
+    def calcManhattanDist(self):
+        count = 0
+        for i in range(0, self.size):
+            for j in range(0, self.size): 
+                if self.init_state[i][j] != 0 and self.init_state[i][j] != self.goal_state[i][j]:
+                    goal = self.getGoalPosition(self.init_state[i][j])
+                    count += abs(goal[0] - i) + abs(goal[1] - j)
+        return count
+
+    def getGoalPosition(self, value):
+        return (value - 1) / self.size, (value - 1) % self.size
+
+
+    # heuristic 3 - calculates sum of manhattan tiles and linear conflict between tiles in a row  
+    def calcLinearConflict(self):
+        count = self.calcManhattanDist()
+        for i in range(0, self.size):
+            count += self.getLinearConflictForRow(i)
+            count += self.getLinearConflictForColumn(i)
+        return count
+
+    # function that returns 2 if there is ANY linear conflict in a row, else returns 0
+    def getLinearConflictForRow(self, row):
+        for i in range (0, self.size - 1):
+            current = self.init_state[row][i]
+            if current == 0:
+                continue
+            # check if the element belongs in this row
+            if (current - 1) / self.size == row:
+                for j in range (i + 1, self.size):
+                    if (self.init_state[row][j] - 1) / self.size == row and self.init_state[row][j] != 0 and current > self.init_state[row][j]:
+                        return 2
+        return 0
+
+     # function that returns 2 if there is ANY linear conflict in a col, else returns 0
+    def getLinearConflictForColumn(self, col):
+        for i in range (0, self.size - 1):
+            current = self.init_state[i][col]
+            if current == 0:
+                continue
+            # check if the element belongs in this col
+            if (current - 1) % self.size == col:
+                for j in range (i + 1, self.size):
+                    if (self.init_state[j][col] - 1) % self.size == col and self.init_state[j][col] != 0 and current > self.init_state[j][col]:
+                        return 2
+        return 0
 
 if __name__ == "__main__":
     # do NOT modify below

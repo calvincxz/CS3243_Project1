@@ -1,15 +1,13 @@
 import os
 import sys
-import time
 from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
 
-# Using ManhattanDist as heuristic
+# heuristic 2 - Using ManhattanDist as heuristic
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        # you may add more attributes if you think is useful
         self.size = len(init_state)
         self.init_state = init_state
         self.goal_state = goal_state
@@ -151,6 +149,7 @@ class Puzzle(object):
         new_puzzle = Puzzle(new_state, self.goal_state)
         new_puzzle.empty_cell_position = [row + 1, col]
         new_puzzle.actions = new_actions
+        # update the manhattandistance by 1 or -1, and the g(n) by 1 since we're going deeper by 1 level
         new_puzzle.evaluation_cost = self.evaluation_cost + manhattanDistanceChange + 1        
         return new_puzzle
 
@@ -183,7 +182,6 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
-            start = time.time()
             # run manhattan calculation only once. Eval cost at the start is only = manhattan distance as we have not traversed any nodes yet so g(n) = 0
             self.evaluation_cost = self.calcManhattanDist()
             global result
@@ -198,11 +196,8 @@ class Puzzle(object):
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
-                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
-                    print 'number of visited nodes: ' + str(len(visited_nodes))
-                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -220,8 +215,6 @@ class Puzzle(object):
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
 
-    # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
-
     def calcManhattanDist(self):
         count = 0
         for i in range(0, self.size):
@@ -233,8 +226,6 @@ class Puzzle(object):
 
     def getGoalPosition(self, value):
         return (value - 1) / self.size, (value - 1) % self.size
-    
-    # you may add more functions if you think is useful
 
 if __name__ == "__main__":
     # do NOT modify below

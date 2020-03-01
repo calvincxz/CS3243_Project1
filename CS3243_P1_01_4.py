@@ -1,15 +1,13 @@
 import os
 import sys
-import time
 from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
 
-# Using ManhattanDist as heuristic
+# heuristic 3 - Using Manhattan Distance + Linear Conflict penalty
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        # you may add more attributes if you think is useful
         self.size = len(init_state)
         self.init_state = init_state
         self.goal_state = goal_state
@@ -214,7 +212,6 @@ class Puzzle(object):
 
     def solve(self):
         if self.solvable():
-            start = time.time()
             # run manhattan calculation and linear conflict on the full grid only once. Eval cost at the start is only = manhattan distance + linear conflict as we have not traversed any nodes yet, ie g(n) = 0
             self.evaluation_cost = self.calcManhattanDist() + self.calcLinearConflict()
             global result
@@ -229,11 +226,8 @@ class Puzzle(object):
 
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
-                    end = time.time()
                     print(node.actions)
                     print(len(node.actions))
-                    print 'number of visited nodes: ' + str(len(visited_nodes))
-                    print 'duration: ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -251,8 +245,6 @@ class Puzzle(object):
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
 
-    # heuristic 2 - calculates manhattan tiles from init state to goal state (O(n^2) complexity though)
-
     def calcManhattanDist(self):
         count = 0
         for i in range(0, self.size):
@@ -265,15 +257,12 @@ class Puzzle(object):
     def getGoalPosition(self, value):
         return (value - 1) / self.size, (value - 1) % self.size
 
-    # heuristic 3 - calculates sum of manhattan tiles and linear conflict between tiles in a row  
     def calcLinearConflict(self):
         count = 0
         for i in range(0, self.size):
             count += self.getLinearConflictForRow(i)
             count += self.getLinearConflictForColumn(i)
         return count
-
-    # you may add more functions if you think is useful
 
     # function that returns 2 if there is ANY linear conflict in a row, else returns 0
     def getLinearConflictForRow(self, row):
