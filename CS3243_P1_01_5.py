@@ -5,14 +5,181 @@ from Queue import PriorityQueue
 
 result = list()
 visited_nodes = set()
+generated = 1
+maxSize = 1
 
 # SELECT WHAT MODE YOU WANT TO RUN
 # This file has unoptimized versions of manhattan and linear (recalculating the heuristic on each move instead of making stepwise adjustments)
 # We do this for adaptability's sake.
 
-# mode = 'MISPLACED'
+# mode = 'IDS'
+mode = 'MISPLACED'
 # mode = 'MANHATTAN'
-mode = 'LINEAR'
+# mode = 'LINEAR'
+
+class PuzzleIDS(object):
+    def __init__(self, init_state, goal_state):
+        self.size = len(init_state)
+        self.init_state = init_state
+        self.goal_state = goal_state
+        self.actions = list()
+        self.empty_cell_position = [-1, -1]
+
+    def getEmptyCellPosition(self):
+        if self.empty_cell_position != [-1, -1]:
+            return self.empty_cell_position
+        for i in range(0, self.size):
+            for j in range(0, self.size):
+                cell_value = self.init_state[i][j]
+                if cell_value == 0:
+                    return [i, j]
+
+    def moveEmptyCellToLeft(self):
+        empty_cell_position = self.getEmptyCellPosition()
+        new_state = list(map(list, self.init_state))
+        row = empty_cell_position[0]
+        col = empty_cell_position[1]
+        if col <= 0:
+            return PuzzleIDS([], [])
+        
+        new_state[row][col] = new_state[row][col - 1]
+        new_state[row][col - 1] = 0
+        new_actions = self.actions[:]
+        new_actions.append("RIGHT")
+        new_puzzle = PuzzleIDS(new_state, self.goal_state)
+        new_puzzle.empty_cell_position = [row, col - 1]
+        new_puzzle.actions = new_actions
+        global generated
+        generated += 1
+        return new_puzzle
+
+    def moveEmptyCellUp(self):
+        empty_cell_position = self.getEmptyCellPosition()
+        new_state = list(map(list, self.init_state))
+        row = empty_cell_position[0]
+        col = empty_cell_position[1]
+        if row <= 0:
+            return PuzzleIDS([], [])
+
+        new_state[row][col] = new_state[row - 1][col]
+        new_state[row - 1][col] = 0
+        new_actions = self.actions[:]
+        new_actions.append("DOWN")
+        new_puzzle = PuzzleIDS(new_state, self.goal_state)
+        new_puzzle.empty_cell_position = [row - 1, col]
+        new_puzzle.actions = new_actions
+        global generated
+        generated += 1
+        return new_puzzle
+
+    def moveEmptyCellToRight(self):          
+        empty_cell_position = self.getEmptyCellPosition()
+        new_state = list(map(list, self.init_state))
+        row = empty_cell_position[0]
+        col = empty_cell_position[1]
+        if col >= self.size - 1:
+            return PuzzleIDS([], [])
+        
+        new_state[row][col] = new_state[row][col + 1]
+        new_state[row][col + 1] = 0
+        new_actions = self.actions[:]
+        new_actions.append("LEFT")
+        new_puzzle = PuzzleIDS(new_state, self.goal_state)       
+        new_puzzle.empty_cell_position = [row, col + 1]
+        new_puzzle.actions = new_actions
+        global generated
+        generated += 1
+        return new_puzzle
+
+    def moveEmptyCellDown(self):
+        empty_cell_position = self.getEmptyCellPosition()
+        new_state = list(map(list, self.init_state))
+        row = empty_cell_position[0]
+        col = empty_cell_position[1]
+        if row >= self.size - 1:
+            return PuzzleIDS([], [])
+
+        new_state[row][col] = new_state[row + 1][col]
+        new_state[row + 1][col] = 0
+        new_actions = self.actions[:]
+        new_actions.append("UP")
+        new_puzzle = PuzzleIDS(new_state, self.goal_state)
+        new_puzzle.empty_cell_position = [row + 1, col]
+        new_puzzle.actions = new_actions
+        global generated
+        generated += 1
+        return new_puzzle
+
+    def DLS(self, depth, limit):
+        global result
+        # puzzle state is invalid
+        if self.init_state == []:
+            return False
+        if self.init_state == self.goal_state:
+            result = self.actions
+            return True
+        if depth > limit:
+            return False
+        # checks if node has been visited before
+        tuple_for_set = tuple(map(tuple, self.init_state))
+        if tuple_for_set in visited_nodes:
+            return False
+        visited_nodes.add(tuple_for_set)
+
+        return self.moveEmptyCellToRight().DLS(depth + 1, limit) or self.moveEmptyCellToLeft().DLS(depth + 1, limit) or \
+            self.moveEmptyCellUp().DLS(depth + 1, limit) or self.moveEmptyCellDown().DLS(depth + 1, limit)
+
+    # helper function to determine whether an initial state is solvable, using the concept of inversions
+    # formula is derived from https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
+    def solvable(self):
+        # flatten 2d grid into 1d list
+        flatList = []
+        for i in range(0, self.size):
+            for j in range(0, self.size):
+                flatList.append(self.init_state[i][j])
+        inversions = 0
+        rowWithBlank = 0
+        # run through the list and see how many inversions there are
+        # this should be a one time n^2 operation
+        for i in range(0, len(flatList)):
+            current = flatList[i]
+            if (current == 0):
+                # take note of which row we are on
+                rowWithBlank = i / self.size
+            else:
+                for j in range(i + 1, len(flatList)):
+                    if (flatList[j] != 0 and current > flatList[j]):
+                        inversions += 1
+        
+        evenDimensions = self.size % 2 == 0
+        evenInversions = inversions % 2 == 0
+        blankOnEvenRow = rowWithBlank % 2 == 0
+        
+        return ((not(evenDimensions) and evenInversions) or (evenDimensions and (blankOnEvenRow != evenInversions)))
+
+    def solve(self):
+        if self.solvable():
+            start = time.time()
+            global generated
+            global maxSize
+            global visited_nodes
+            for limit in range(0, 1000):
+                visited_nodes = set()
+                if self.DLS(0, limit):
+                    end = time.time()
+                    print(result)
+                    print(len(result))
+                    print 'running in ' + mode + ' mode.'
+                    print 'number of generated nodes: ' + str(generated)
+                    print 'duration: ' + str(end - start)
+                    print str(len(result)) + ', ' + str(generated) + ', ' + str(end - start)
+                    return result
+
+        print("UNSOLVABLE")
+        return ["UNSOLVABLE"]
+
+
+# This is the class for ASTAR search
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
@@ -141,7 +308,8 @@ class Puzzle(object):
     def solve(self):
         if self.solvable():
             start = time.time()
-            global result
+            global generated
+            global maxSize
             global visited_nodes
             pq = PriorityQueue()
             pq.put(self)
@@ -154,10 +322,13 @@ class Puzzle(object):
                 # check if popped node's state = goal state
                 if node.init_state == node.goal_state:
                     end = time.time()
+                    print 'running in ' + mode + ' mode.'
                     print(node.actions)
                     print(len(node.actions))
-                    print 'number of visited nodes: ' + str(len(visited_nodes))
+                    print 'number of generated nodes: ' + str(generated)
+                    print 'max size of frontier: ' + str(maxSize)
                     print 'duration: ' + str(end - start)
+                    print str(len(node.actions)) + ', ' + str(generated) + ', ' + str(maxSize) + ', ' + str(end - start)
                     return node.actions
 
                 # checks if node has been visited before
@@ -167,10 +338,14 @@ class Puzzle(object):
                 neighbours = [node.moveEmptyCellDown(), node.moveEmptyCellUp(), \
                             node.moveEmptyCellToLeft(), node.moveEmptyCellToRight()]
                 for neighbour in neighbours:
+                    generated += 1
                     if neighbour != None:
                         tuple_for_set = tuple(map(tuple, neighbour.init_state))
                         if not (tuple_for_set in visited_nodes):
                             pq.put(neighbour)
+                
+                if (pq.qsize() > maxSize):
+                    maxSize = pq.qsize()
 
         print("UNSOLVABLE")
         return ["UNSOLVABLE"]
@@ -246,6 +421,7 @@ class Puzzle(object):
         return 0
 
 if __name__ == "__main__":
+    # global mode
     # do NOT modify below
 
     # argv[0] represents the name of the file that is being executed
@@ -287,8 +463,11 @@ if __name__ == "__main__":
     for i in range(1, max_num + 1):
         goal_state[(i-1)//n][(i-1)%n] = i
     goal_state[n - 1][n - 1] = 0
-
-    puzzle = Puzzle(init_state, goal_state)
+    puzzle = ''
+    if (mode == 'IDS'):
+        puzzle = PuzzleIDS(init_state, goal_state)
+    else:
+        puzzle = Puzzle(init_state, goal_state)
     ans = puzzle.solve()
 
     with open(sys.argv[2], 'a') as f:
